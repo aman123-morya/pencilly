@@ -9,15 +9,22 @@ import type { Settings, Visibility } from '../types';
 
 function copyInvite(game: GameController) {
   if (!game.room) return;
-  const url = new URL(window.location.href);
-  url.search = '';
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const base = isLocal ? 'https://pencilly-app.vercel.app' : window.location.origin;
+  const url = new URL(base);
   url.searchParams.set('room', game.room.id);
-  void navigator.clipboard.writeText(url.toString()).then(() => game.notify('Invite link copied to clipboard.'))
-    .catch(() => game.notify(`Room code: ${game.room?.id}`));
+  void navigator.clipboard.writeText(url.toString()).then(() => {
+    if (isLocal) {
+      game.notify(`Copied public link for room ${game.room?.id}. Note: For other devices to join, both players must use the live site https://pencilly-app.vercel.app`);
+    } else {
+      game.notify('Invite link copied to clipboard.');
+    }
+  }).catch(() => game.notify(`Room code: ${game.room?.id}`));
 }
 
 export function Lobby({ game }: { game: GameController }) {
   const room = game.room!;
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
   const [editOpen, setEditOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(room.settings);
   const [visibility, setVisibility] = useState<Visibility>(room.visibility);
@@ -55,6 +62,14 @@ export function Lobby({ game }: { game: GameController }) {
           <h1>{room.name}<span className="visibility-pill">{room.visibility === 'private' ? <LockKeyhole size={14}/> : <UsersRound size={14}/>} {room.visibility}</span></h1>
           <p>{subtitle}</p>
         </div>
+        {isLocal && (
+          <div className="local-warning-banner" role="alert">
+            <span>⚠️</span>
+            <span>
+              You are running on <strong>localhost</strong>. Outside devices cannot connect to a room on your personal computer. To invite friends, both should use the live site: <a href="https://pencilly-app.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>https://pencilly-app.vercel.app</a>
+            </span>
+          </div>
+        )}
         <div className="lobby-board">
           <div className="lobby-players">
             <div className="panel-header"><div><h2>Players <span>{playerCount}/{room.settings.maxPlayers}</span></h2></div><UsersRound size={20}/></div>

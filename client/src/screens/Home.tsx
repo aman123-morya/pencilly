@@ -68,9 +68,19 @@ export function Home({ game }: { game: GameController }) {
               </div>
               <span className="no-account"><Heart size={13} fill="currentColor" /> Instant Play</span>
             </div>
+            {code.trim().length >= 4 && (
+              <div className="invite-notice-box" role="status">
+                <Sparkles size={16} />
+                <div>
+                  <strong>Room Invite Received</strong>
+                  <span>You were invited to room <strong>{code}</strong>. Choose a nickname to join!</span>
+                </div>
+              </div>
+            )}
             <label className="field-label" htmlFor="player-name">Your nickname</label>
             <input id="player-name" autoComplete="nickname" maxLength={20} className="input light-input name-input"
               placeholder="Enter nickname" value={game.name} onChange={e => game.setName(e.target.value)}
+              autoFocus={code.trim().length >= 4}
               onKeyDown={e => {
                 if (e.key === 'Enter' && validName()) {
                   if (code.trim().length >= 4) {
@@ -90,15 +100,29 @@ export function Home({ game }: { game: GameController }) {
                 ))}
               </div>
             </div>
-            <button type="button" className="primary-btn wide-btn" onClick={() => validName() && game.setScreen('create')}>
-              <Plus size={19} strokeWidth={2.8} /> Create Room <ArrowRight size={18} className="push-right" />
-            </button>
-            <div className="divide-text"><span />or join with code<span /></div>
-            <div className="join-code-row">
-              <div className="code-input-wrap"><Hash size={17}/><input aria-label="Room code" placeholder="Enter room code" maxLength={12} value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())} onKeyDown={e => e.key === 'Enter' && join(code)} /></div>
-              <button type="button" className="secondary-btn" disabled={game.busy} onClick={() => join(code)}>Join <ArrowUpRight size={16}/></button>
-            </div>
+            {code.trim().length >= 4 ? (
+              <>
+                <button type="button" className="primary-btn wide-btn" disabled={game.busy} onClick={() => join(code)}>
+                  <UsersRound size={19} strokeWidth={2.8} /> Join Room {code} <ArrowRight size={18} className="push-right" />
+                </button>
+                <div className="divide-text"><span />or start your own<span /></div>
+                <button type="button" className="secondary-btn wide-btn" onClick={() => validName() && game.setScreen('create')}>
+                  <Plus size={17} /> Create New Room
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="primary-btn wide-btn" onClick={() => validName() && game.setScreen('create')}>
+                  <Plus size={19} strokeWidth={2.8} /> Create Room <ArrowRight size={18} className="push-right" />
+                </button>
+                <div className="divide-text"><span />or join with code<span /></div>
+                <div className="join-code-row">
+                  <div className="code-input-wrap"><Hash size={17}/><input aria-label="Room code" placeholder="Enter room code" maxLength={12} value={code}
+                    onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} onKeyDown={e => e.key === 'Enter' && join(code)} /></div>
+                  <button type="button" className="secondary-btn" disabled={game.busy} onClick={() => join(code)}>Join <ArrowUpRight size={16}/></button>
+                </div>
+              </>
+            )}
           </div>
           <div className="home-footnote"><MousePointer2 size={15} /> Works on desktop, mobile, and tablets. No download required.</div>
         </div>

@@ -18,7 +18,7 @@ const sessionId = getSession();
 
 function send<T extends object>(event: string, payload: T = {} as T): Promise<SocketAck> {
   return new Promise(resolve => {
-    socket.timeout(6000).emit(event, payload, (error: Error | null, answer: SocketAck) => {
+    socket.timeout(12000).emit(event, payload, (error: Error | null, answer: SocketAck) => {
       if (error) resolve({ ok: false, message: 'The server did not respond. Try again.' });
       else resolve(answer || { ok: false, message: 'Something went wrong.' });
     });
