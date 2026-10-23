@@ -11,7 +11,7 @@ export function Home({ game }: { game: GameController }) {
   const [code, setCode] = useState(new URLSearchParams(window.location.search).get('room')?.toUpperCase() || '');
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   useEffect(() => {
-    const apiBase = import.meta.env.VITE_SOCKET_URL?.trim().replace(/\/$/, '') || '';
+    const apiBase = import.meta.env.VITE_SOCKET_URL?.trim().replace(/\/$/, '') || (import.meta.env.PROD ? 'https://pencilly-server.onrender.com' : '');
     fetch(`${apiBase}/api/rooms/public`).then(r => r.ok ? r.json() : []).then(setPublicRooms).catch(() => undefined);
   }, []);
   const validName = () => {
