@@ -2,6 +2,9 @@
 
 <div align="center">
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-pencilly--app.vercel.app-000?style=for-the-badge&logo=vercel&logoColor=white)](https://pencilly-app.vercel.app/)
+[![Backend API](https://img.shields.io/badge/Backend_API-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://pencilly-server.onrender.com/api/health)
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -11,6 +14,8 @@
 [![Tests](https://img.shields.io/badge/Tests-19%20Passed%20(8%20Suites)-success)](./server/test)
 
 **A high-performance, server-authoritative multiplayer drawing-and-guessing game built with React, HTML5 Canvas, Express, and Socket.IO.**
+
+🎮 **[Play Live Now: https://pencilly-app.vercel.app/](https://pencilly-app.vercel.app/)** 🎮
 
 [Architecture](#-system-architecture) • [Quick Start](#-quick-start) • [Game Mechanics](#-game-rules--scoring-mechanics) • [API & Sockets](#-api--socketio-specification) • [Testing](#-automated-testing-suite) • [Production Deployment](#-production-deployment)
 
@@ -362,6 +367,12 @@ npm run typecheck
 ---
 
 ## 🚢 Production Deployment
+
+### 🌐 Live Environments
+
+- 🎮 **Live Web Application (Vercel)**: [https://pencilly-app.vercel.app/](https://pencilly-app.vercel.app/)
+- ⚡ **Live WebSocket Game Server (Render)**: [https://pencilly-server.onrender.com](https://pencilly-server.onrender.com)
+- 🩺 **Health Check API**: [https://pencilly-server.onrender.com/api/health](https://pencilly-server.onrender.com/api/health)
 
 Pencilly compiles into a clean, single Node.js service where Express serves the production React build alongside the WebSocket server on a single port.
 
