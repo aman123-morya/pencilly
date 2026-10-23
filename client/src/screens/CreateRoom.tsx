@@ -5,6 +5,8 @@ import {
   Clock3,
   Dices,
   Globe2,
+  Languages,
+  Layers,
   LockKeyhole,
   Minus,
   Plus,
@@ -15,7 +17,7 @@ import { Brand } from '../components/Brand';
 import { ThemeToggle } from '../components/ThemeToggle';
 import type { GameController } from '../hooks/useGame';
 import { DEFAULT_SETTINGS } from '../types';
-import type { Settings, Visibility, WordMode } from '../types';
+import type { Language, Settings, Visibility, WordCategory, WordMode } from '../types';
 
 interface Preset {
   id: string;
@@ -308,6 +310,39 @@ export function CreateRoom({ game }: { game: GameController }) {
                   🧩 <strong>Combo</strong>
                   <small>Compound phrases</small>
                 </button>
+              </div>
+            </div>
+
+            {/* Row 4: Word Category & Language */}
+            <div className="simple-form-row category-lang-row">
+              <div className="simple-field-col name-col">
+                <label htmlFor="simple-category"><Layers size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: '-1px' }} />Word Category</label>
+                <select
+                  id="simple-category"
+                  className="simple-select-dropdown"
+                  value={settings.wordCategory || 'all'}
+                  onChange={e => updateSetting('wordCategory', e.target.value as WordCategory)}
+                >
+                  <option value="all">🌟 All Categories</option>
+                  <option value="animals">🐾 Animals</option>
+                  <option value="objects">📦 Everyday Objects</option>
+                  <option value="food">🍕 Food & Treats</option>
+                  <option value="places">🗺️ Places & Landmarks</option>
+                </select>
+              </div>
+              <div className="simple-field-col vis-col">
+                <label htmlFor="simple-language"><Languages size={14} style={{ display: 'inline', marginRight: 5, verticalAlign: '-1px' }} />Language</label>
+                <select
+                  id="simple-language"
+                  className="simple-select-dropdown"
+                  value={settings.language || 'en'}
+                  onChange={e => updateSetting('language', e.target.value as Language)}
+                >
+                  <option value="en">🇬🇧 English</option>
+                  <option value="es">🇪🇸 Español</option>
+                  <option value="fr">🇫🇷 Français</option>
+                  <option value="de">🇩🇪 Deutsch</option>
+                </select>
               </div>
             </div>
           </div>

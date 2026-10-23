@@ -17,6 +17,9 @@ export interface Stroke {
   points: Point[];
 }
 
+export type WordCategory = 'all' | 'animals' | 'objects' | 'food' | 'places';
+export type Language = 'en' | 'es' | 'fr' | 'de';
+
 export interface Settings {
   maxPlayers: number;
   rounds: number;
@@ -24,6 +27,8 @@ export interface Settings {
   wordCount: number;
   hints: number;
   wordMode: WordMode;
+  wordCategory?: WordCategory;
+  language?: Language;
 }
 
 export interface PlayerDTO {
@@ -35,7 +40,7 @@ export interface PlayerDTO {
   connected: boolean;
 }
 
-export type MessageKind = 'guess' | 'chat' | 'success' | 'system';
+export type MessageKind = 'guess' | 'chat' | 'success' | 'system' | 'broadcast';
 
 export interface Message {
   id: string;
@@ -103,4 +108,6 @@ export const DEFAULT_SETTINGS: Settings = {
   wordCount: 3,
   hints: 2,
   wordMode: 'normal',
+  wordCategory: 'all',
+  language: 'en',
 };

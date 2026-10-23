@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Check, ClipboardCheck, Copy, Crown, Edit3, Ellipsis, ExternalLink, LockKeyhole, Play, Settings2, Share2, Sparkles, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, Copy, Crown, Edit3, Ellipsis, ExternalLink, LockKeyhole, Play, Settings2, Share2, Sparkles, UsersRound, UserX, X } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { Brand } from '../components/Brand';
 import { SettingsFields } from '../components/SettingsFields';
@@ -63,7 +63,20 @@ export function Lobby({ game }: { game: GameController }) {
                 <div className={`lobby-player ${!player.connected ? 'player-disconnected' : ''}`} key={player.id}>
                   <div className="lobby-player-name"><span className="lobby-avatar-wrap"><Avatar index={player.avatar} size={42}/>{player.id === room.hostId && <Crown className="avatar-crown" size={17} fill="currentColor" />}</span>
                     <div><strong>{player.name}</strong><small>{player.id === room.hostId ? 'Room Host' : player.id === game.playerId ? 'You' : 'Player'}</small></div></div>
-                  <span className={`ready-label ${player.ready && player.connected ? 'is-ready' : ''}`}>{!player.connected ? 'Offline' : player.ready ? 'Ready' : 'Not Ready'}</span>
+                  <div className="lobby-player-actions">
+                    <span className={`ready-label ${player.ready && player.connected ? 'is-ready' : ''}`}>{!player.connected ? 'Offline' : player.ready ? 'Ready' : 'Not Ready'}</span>
+                    {player.id !== game.playerId && (
+                      game.isHost ? (
+                        <button className="kick-action-btn" type="button" title={`Kick ${player.name}`} onClick={() => void game.kickPlayer(player.id)}>
+                          <UserX size={14}/> <span>Kick</span>
+                        </button>
+                      ) : (
+                        <button className="votekick-action-btn" type="button" title={`Vote to kick ${player.name}`} onClick={() => void game.voteKickPlayer(player.id)}>
+                          <UserX size={14}/> <span>Vote Kick</span>
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
               ))}
               {slots.map((_, index) => <div className="empty-player" key={index}><span className="dashed-avatar">+</span><span>Waiting for player...</span><Ellipsis size={15}/></div>)}
@@ -80,6 +93,8 @@ export function Lobby({ game }: { game: GameController }) {
                 <div><span>Word choices</span><strong>{room.settings.wordCount}</strong></div>
                 <div><span>Hints</span><strong>{room.settings.hints}</strong></div>
                 <div><span>Word mode</span><strong>{room.settings.wordMode}</strong></div>
+                <div><span>Category</span><strong>{room.settings.wordCategory || 'all'}</strong></div>
+                <div><span>Language</span><strong>{(room.settings.language || 'en').toUpperCase()}</strong></div>
               </div>
             </div>
             <div className="lobby-action-card">

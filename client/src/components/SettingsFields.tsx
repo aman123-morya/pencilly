@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { BookOpenText, Clock3, Globe2, Lightbulb, LockKeyhole, UsersRound } from 'lucide-react';
-import type { Settings, Visibility, WordMode } from '../types';
+import { BookOpenText, Clock3, Globe2, Languages, Layers, Lightbulb, LockKeyhole, UsersRound } from 'lucide-react';
+import type { Language, Settings, Visibility, WordCategory, WordMode } from '../types';
 
 function NumberSetting({ label, subtitle, icon, value, min, max, step = 1, onChange, suffix }: {
   label: string; subtitle: string; icon: ReactNode; value: number;
@@ -53,6 +53,25 @@ export function SettingsFields({ settings, setSettings, visibility, setVisibilit
         <div className="setting-label"><span className="setting-icon"><BookOpenText size={18}/></span><div><strong>Word mode</strong><small>Gameplay hint rules</small></div></div>
         <select aria-label="Word mode" className="mode-select" value={settings.wordMode} onChange={e => change('wordMode', e.target.value as WordMode)}>
           <option value="normal">Normal</option><option value="hidden">No letter hints</option><option value="combination">Combination</option>
+        </select>
+      </div>
+      <div className="setting-field">
+        <div className="setting-label"><span className="setting-icon"><Layers size={18}/></span><div><strong>Word category</strong><small>Vocabulary topic</small></div></div>
+        <select aria-label="Word category" className="mode-select" value={settings.wordCategory || 'all'} onChange={e => change('wordCategory', e.target.value as WordCategory)}>
+          <option value="all">🌟 All Categories</option>
+          <option value="animals">🐾 Animals</option>
+          <option value="objects">📦 Everyday Objects</option>
+          <option value="food">🍕 Food & Treats</option>
+          <option value="places">🗺️ Places & Landmarks</option>
+        </select>
+      </div>
+      <div className="setting-field">
+        <div className="setting-label"><span className="setting-icon"><Languages size={18}/></span><div><strong>Word language</strong><small>Dictionary language</small></div></div>
+        <select aria-label="Word language" className="mode-select" value={settings.language || 'en'} onChange={e => change('language', e.target.value as Language)}>
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="de">🇩🇪 Deutsch</option>
         </select>
       </div>
     </div>

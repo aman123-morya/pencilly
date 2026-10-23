@@ -142,6 +142,14 @@ describe('WordManager', () => {
       assert.ok(opt.includes(' '));
     }
   });
+
+  it('supports categories and languages', () => {
+    const esOptions = WordManager.getWordOptions('normal', 3, new Set(), 'animals', 'es');
+    assert.equal(esOptions.length, 3);
+    const frOptions = WordManager.getWordOptions('normal', 3, new Set(), 'food', 'fr');
+    assert.equal(frOptions.length, 3);
+    assert.equal(WordManager.isMatch('café', 'cafe'), true);
+  });
 });
 
 describe('Room and RoomManager', () => {

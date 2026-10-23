@@ -1,4 +1,4 @@
-import type { Message, RoomStateDTO, Settings, Visibility, WordMode } from '../types.js';
+import type { Language, Message, RoomStateDTO, Settings, Visibility, WordCategory, WordMode } from '../types.js';
 import { Player } from './Player.js';
 import { DrawingManager } from './DrawingManager.js';
 import { GameEngine, GameEngineCallbacks } from './GameEngine.js';
@@ -49,6 +49,16 @@ export class Room {
       ? (s.wordMode as WordMode)
       : 'normal';
 
+    const wordCategoryCandidates: WordCategory[] = ['all', 'animals', 'objects', 'food', 'places'];
+    const wordCategory = wordCategoryCandidates.includes(String(s.wordCategory) as WordCategory)
+      ? (s.wordCategory as WordCategory)
+      : 'all';
+
+    const languageCandidates: Language[] = ['en', 'es', 'fr', 'de'];
+    const language = languageCandidates.includes(String(s.language) as Language)
+      ? (s.language as Language)
+      : 'en';
+
     return {
       maxPlayers: Room.clamp(s.maxPlayers, 2, 20, 8),
       rounds: Room.clamp(s.rounds, 2, 10, 3),
@@ -56,6 +66,8 @@ export class Room {
       wordCount: Room.clamp(s.wordCount, 1, 5, 3),
       hints: Room.clamp(s.hints, 0, 5, 2),
       wordMode,
+      wordCategory,
+      language,
     };
   }
 

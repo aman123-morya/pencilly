@@ -9,8 +9,22 @@ import type { GameEngineCallbacks } from '../models/GameEngine.js';
 
 export class MessageHandler {
   private rateLimits = new Map<string, { lastChat: number[]; lastDraw: number }>();
+  private voteKicks = new Map<string, Map<string, Set<string>>>();
 
   constructor(private io: Server, private roomManager: RoomManager) {}
+
+  private kickPlayerFromRoom(room: Room, targetPlayer: Player, reason: string): void {
+    const targetSocket = this.io.sockets.sockets.get(targetPlayer.socketId);
+    if (targetSocket) {
+      targetSocket.leave(room.id);
+      delete targetSocket.data.roomId;
+      delete targetSocket.data.playerId;
+      targetSocket.emit('kicked', { reason });
+    }
+    room.removePlayer(targetPlayer.id, true);
+    this.announce(room, `${targetPlayer.name} was removed from the room (${reason}).`);
+    this.broadcastPlayers(room);
+  }
 
   private respond(ack: unknown, result: SocketAck): void {
     if (typeof ack === 'function') {
@@ -283,6 +297,87 @@ export class MessageHandler {
       this.respond(ack, { ok: true });
     });
 
+    socket.on('kick_player', (payload: unknown, ack: unknown) => {
+      const found = this.getSocketRoom(socket);
+      if (!found || found.player.id !== found.room.hostId) {
+        this.respond(ack, { ok: false, message: 'Only the room host can kick players.' });
+        return;
+      }
+
+      const targetId = (payload as { targetPlayerId?: string })?.targetPlayerId;
+      if (!targetId || targetId === found.player.id) {
+        this.respond(ack, { ok: false, message: 'Invalid player to kick.' });
+        return;
+      }
+
+      const targetPlayer = found.room.players.get(targetId);
+      if (!targetPlayer) {
+        this.respond(ack, { ok: false, message: 'Player not found in room.' });
+        return;
+      }
+
+      this.kickPlayerFromRoom(found.room, targetPlayer, 'Kicked by host');
+      this.respond(ack, { ok: true });
+    });
+
+    socket.on('votekick_player', (payload: unknown, ack: unknown) => {
+      const found = this.getSocketRoom(socket);
+      if (!found) {
+        this.respond(ack, { ok: false, message: 'You must be in a room.' });
+        return;
+      }
+
+      const targetId = (payload as { targetPlayerId?: string })?.targetPlayerId;
+      if (!targetId || targetId === found.player.id) {
+        this.respond(ack, { ok: false, message: 'You cannot votekick yourself.' });
+        return;
+      }
+
+      if (targetId === found.room.hostId) {
+        this.respond(ack, { ok: false, message: 'Cannot votekick the room host.' });
+        return;
+      }
+
+      const targetPlayer = found.room.players.get(targetId);
+      if (!targetPlayer || !targetPlayer.connected) {
+        this.respond(ack, { ok: false, message: 'Player is not in the room.' });
+        return;
+      }
+
+      let roomVotes = this.voteKicks.get(found.room.id);
+      if (!roomVotes) {
+        roomVotes = new Map();
+        this.voteKicks.set(found.room.id, roomVotes);
+      }
+
+      let voterSet = roomVotes.get(targetId);
+      if (!voterSet) {
+        voterSet = new Set();
+        roomVotes.set(targetId, voterSet);
+      }
+
+      if (voterSet.has(found.player.id)) {
+        this.respond(ack, { ok: false, message: 'You already voted to kick this player.' });
+        return;
+      }
+
+      voterSet.add(found.player.id);
+      const connectedCount = [...found.room.players.values()].filter(p => p.connected).length;
+      const threshold = Math.max(2, Math.floor(connectedCount / 2) + 1);
+
+      if (voterSet.size >= threshold) {
+        roomVotes.delete(targetId);
+        this.kickPlayerFromRoom(found.room, targetPlayer, 'Votekicked by room majority');
+        this.respond(ack, { ok: true, message: `${targetPlayer.name} was votekicked.` });
+      } else {
+        this.announce(
+          found.room,
+          `🗳️ ${found.player.name} voted to kick ${targetPlayer.name} (${voterSet.size}/${threshold} votes)`
+        );
+        this.respond(ack, { ok: true, message: `Vote registered (${voterSet.size}/${threshold})` });
+      }
+    });
+
     socket.on('set_ready', (payload: unknown, ack: unknown) => {
       const found = this.getSocketRoom(socket);
       if (!found || found.room.gameEngine.phase !== 'lobby') {
@@ -426,11 +521,46 @@ export class MessageHandler {
         return;
       }
 
+      let kind: Message['kind'] = 'chat';
+      let cleanText = text;
+      if (text.startsWith('/b ') || text.startsWith('/broadcast ')) {
+        if (found.player.id === found.room.hostId) {
+          kind = 'broadcast';
+          cleanText = text.replace(/^\/(b|broadcast)\s+/, '');
+        }
+      }
+
       const message: Message = {
         id: crypto.randomUUID(),
         playerId: found.player.id,
         playerName: found.player.name,
-        kind: 'chat',
+        kind,
+        text: cleanText,
+        timestamp: Date.now(),
+      };
+      found.room.addMessage(message);
+      this.io.to(found.room.id).emit('chat_message', message);
+      this.respond(ack, { ok: true });
+    });
+
+    socket.on('broadcast_chat', (payload: unknown, ack: unknown) => {
+      const found = this.getSocketRoom(socket);
+      if (!found || found.player.id !== found.room.hostId) {
+        this.respond(ack, { ok: false, message: 'Only the host can send broadcast announcements.' });
+        return;
+      }
+
+      const text = this.cleanText((payload as { text?: string })?.text, 180);
+      if (!text) {
+        this.respond(ack, { ok: false, message: 'Broadcast message cannot be empty.' });
+        return;
+      }
+
+      const message: Message = {
+        id: crypto.randomUUID(),
+        playerId: found.player.id,
+        playerName: found.player.name,
+        kind: 'broadcast',
         text,
         timestamp: Date.now(),
       };

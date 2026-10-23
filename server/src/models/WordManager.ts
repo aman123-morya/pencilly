@@ -1,17 +1,23 @@
 import crypto from 'node:crypto';
 import { chooseWords } from '../words.js';
-import type { WordMode } from '../types.js';
+import type { Language, WordCategory, WordMode } from '../types.js';
 
 export class WordManager {
-  static getWordOptions(mode: WordMode, count: number, usedWords: Set<string>): string[] {
+  static getWordOptions(
+    mode: WordMode,
+    count: number,
+    usedWords: Set<string>,
+    category: WordCategory = 'all',
+    language: Language = 'en'
+  ): string[] {
     const safeCount = Math.max(1, Math.min(5, count));
     if (mode === 'combination') {
       return Array.from({ length: safeCount }, () => {
-        const pair = chooseWords(2, usedWords);
+        const pair = chooseWords(2, usedWords, category, language);
         return pair.join(' ');
       });
     }
-    return chooseWords(safeCount, usedWords);
+    return chooseWords(safeCount, usedWords, category, language);
   }
 
   static createWordMask(word: string, revealedIndices: Set<number>): string {
@@ -34,7 +40,7 @@ export class WordManager {
     mode: WordMode
   ): number {
     if (mode === 'hidden' || hintsConfig <= 0) return 0;
-    const letterCount = word.replace(/[^a-z]/gi, '').length;
+    const letterCount = word.replace(/[^\p{L}]/gu, '').length;
     const maxPossibleHints = Math.min(hintsConfig, Math.max(0, letterCount - 1));
     if (maxPossibleHints <= 0) return 0;
 
@@ -47,7 +53,7 @@ export class WordManager {
     if (!word) return null;
     const unrevealedIndices: number[] = [];
     for (let i = 0; i < word.length; i++) {
-      if (/[a-z]/i.test(word[i]) && !revealedIndices.has(i)) {
+      if (/[\p{L}]/u.test(word[i]) && !revealedIndices.has(i)) {
         unrevealedIndices.push(i);
       }
     }
@@ -63,7 +69,12 @@ export class WordManager {
   }
 
   static normalize(value: string): string {
-    return (value || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    return (value || '')
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
   }
 
   static isMatch(guess: string, target: string): boolean {

@@ -91,7 +91,9 @@ export class GameEngine {
     this.wordOptions = WordManager.getWordOptions(
       this.room.settings.wordMode,
       this.room.settings.wordCount,
-      this.usedWords
+      this.usedWords,
+      this.room.settings.wordCategory,
+      this.room.settings.language
     );
 
     const drawer = this.room.players.get(this.drawerId);

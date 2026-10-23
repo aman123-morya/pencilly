@@ -89,6 +89,18 @@ export function useGame() {
     };
     const onTimer = (payload: { remainingSeconds: number }) => setRemaining(payload.remainingSeconds);
     const onError = (error: { message?: string }) => setNotice(error.message || 'Connection error');
+    const onKicked = (payload?: { reason?: string }) => {
+      sessionStorage.removeItem(ROOM_KEY);
+      attemptedReconnect.current = false;
+      setNotice(payload?.reason || 'You have been kicked from the room.');
+      setRoom(null);
+      setScreen('home');
+      setWordOptions([]);
+      setSecretWord('');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('room');
+      window.history.replaceState({}, '', url.toString());
+    };
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('game_state', onGameState);
@@ -96,6 +108,7 @@ export function useGame() {
     socket.on('secret_word', onSecretWord);
     socket.on('timer_tick', onTimer);
     socket.on('connect_error', onError);
+    socket.on('kicked', onKicked);
     socket.connect();
     return () => {
       socket.off('connect', onConnect);
@@ -105,6 +118,7 @@ export function useGame() {
       socket.off('secret_word', onSecretWord);
       socket.off('timer_tick', onTimer);
       socket.off('connect_error', onError);
+      socket.off('kicked', onKicked);
       socket.disconnect();
     };
   }, []);
@@ -171,6 +185,9 @@ export function useGame() {
   const playAgain = async () => { await wrap(() => send('play_again')); };
   const sendGuess = async (text: string) => send('guess', { text });
   const sendChat = async (text: string) => send('chat', { text });
+  const kickPlayer = async (targetPlayerId: string) => wrap(() => send('kick_player', { targetPlayerId }));
+  const voteKickPlayer = async (targetPlayerId: string) => wrap(() => send('votekick_player', { targetPlayerId }));
+  const broadcastChat = async (text: string) => wrap(() => send('broadcast_chat', { text }));
   const notify = (text: string) => setNotice(text);
   const me: Player | undefined = room?.players.find(player => player.id === playerId);
   const isHost = room?.hostId === playerId;
@@ -181,7 +198,7 @@ export function useGame() {
     name, setName, avatar, setAvatar, connected, busy, notice,
     wordOptions, secretWord, remaining, showHow, setShowHow,
     createRoom, joinRoom, leaveRoom, setReady, updateSettings, startGame,
-    chooseWord, playAgain, sendGuess, sendChat, notify,
+    chooseWord, playAgain, sendGuess, sendChat, kickPlayer, voteKickPlayer, broadcastChat, notify,
   };
 }
 export type GameController = ReturnType<typeof useGame>;

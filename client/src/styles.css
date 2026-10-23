@@ -1737,6 +1737,202 @@ svg { flex-shrink: 0; }
   border-color: #e2e8f0;
   color: #0f172a;
 }
+
+/* ========================================================
+   MODERATION & ADVANCED GAMEPLAY STYLES
+   ======================================================== */
+.lobby-player-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kick-action-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.votekick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.votekick-action-btn:hover {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.score-player-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.score-kick-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.score-kick-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.score-votekick-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.score-votekick-btn:hover {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.chat-broadcast {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.15));
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  border-radius: 9px;
+  padding: 8px 10px;
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.broadcast-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.broadcast-body {
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.broadcast-body strong {
+  color: #fde68a;
+}
+
+.chat-mode-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 8px 0;
+  margin-bottom: 2px;
+}
+
+.chat-tab-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-tab-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #f8fafc;
+}
+
+.chat-tab-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+.chat-tab-btn.broadcast-tab.active {
+  background: #d97706;
+  border-color: #d97706;
+  color: #ffffff;
+}
+
+.simple-select-dropdown {
+  width: 100%;
+  height: 42px;
+  border-radius: 11px;
+  border: 1.5px solid #e7d6c2;
+  background: #fffcf8;
+  color: #3b281d;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.simple-select-dropdown:focus {
+  outline: none;
+  border-color: #e45d27;
+}
+
+[data-theme="dark"] .simple-select-dropdown {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+@media (max-width: 470px) {
+  .category-lang-row {
+    flex-direction: column !important;
+  }
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

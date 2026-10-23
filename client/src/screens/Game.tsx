@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, CheckCheck, Clock3, Copy, Crown, Lightbulb, Lock, MessageCircle, PenLine, Send, Sparkles, UsersRound } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, Clock3, Copy, Crown, Lightbulb, Lock, Megaphone, MessageCircle, PenLine, Send, Sparkles, UsersRound, UserX } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { Brand } from '../components/Brand';
 import { DrawingCanvas } from '../components/DrawingCanvas';
@@ -8,7 +8,7 @@ import { socket } from '../lib/socket';
 import type { GameController } from '../hooks/useGame';
 import type { Message, RoomState } from '../types';
 
-function Scoreboard({ room, playerId }: { room: RoomState; playerId: string }) {
+function Scoreboard({ room, game }: { room: RoomState; game: GameController }) {
   const ordered = [...room.players].sort((a, b) => b.score - a.score);
   return (
     <aside className="game-scoreboard game-pane">
@@ -18,9 +18,24 @@ function Scoreboard({ room, playerId }: { room: RoomState; playerId: string }) {
           <div className={`score-player ${player.id === room.drawerId ? 'currently-drawing' : ''}`} key={player.id}>
             <span className="player-rank">{idx === 0 ? <Crown size={16} fill="currentColor"/> : String(idx + 1).padStart(2,'0')}</span>
             <Avatar index={player.avatar} size={42} />
-            <div className="score-player-text"><strong>{player.name}{player.id === playerId ? <span className="is-you">(you)</span> : null}</strong>
-              <span>{player.id === room.drawerId ? <><PenLine size={11}/> Drawing</> : room.guessedIds.includes(player.id) ? <><Check size={11}/> Guessed it</> : !player.connected ? 'Offline' : 'Guessing'}</span></div>
-            <span className="player-points">{player.score}</span>
+            <div className="score-player-text">
+              <strong>{player.name}{player.id === game.playerId ? <span className="is-you">(you)</span> : null}</strong>
+              <span>{player.id === room.drawerId ? <><PenLine size={11}/> Drawing</> : room.guessedIds.includes(player.id) ? <><Check size={11}/> Guessed it</> : !player.connected ? 'Offline' : 'Guessing'}</span>
+            </div>
+            <div className="score-player-end">
+              <span className="player-points">{player.score}</span>
+              {player.id !== game.playerId && (
+                game.isHost ? (
+                  <button className="score-kick-btn" type="button" title={`Kick ${player.name}`} onClick={() => void game.kickPlayer(player.id)}>
+                    <UserX size={13}/>
+                  </button>
+                ) : (
+                  <button className="score-votekick-btn" type="button" title={`Vote to kick ${player.name}`} onClick={() => void game.voteKickPlayer(player.id)}>
+                    <UserX size={13}/>
+                  </button>
+                )
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -32,10 +47,27 @@ function GameChat({ game }: { game: GameController }) {
   const room = game.room!;
   const [messages, setMessages] = useState<Message[]>(room.messages);
   const [draft, setDraft] = useState('');
+  const [chatMode, setChatMode] = useState<'guess' | 'chat' | 'broadcast'>('guess');
   const listRef = useRef<HTMLDivElement>(null);
   const alreadyGuessed = room.guessedIds.includes(game.playerId);
   const mayGuess = room.phase === 'drawing' && !game.isDrawer && !alreadyGuessed;
-  const inputPlaceholder = room.phase === 'drawing' && mayGuess ? 'Type your guess here...' : 'Chat message...';
+
+  // Auto-switch mode when guessing is not permitted
+  useEffect(() => {
+    if (!mayGuess && chatMode === 'guess') {
+      setChatMode('chat');
+    } else if (mayGuess && chatMode === 'chat') {
+      setChatMode('guess');
+    }
+  }, [mayGuess]);
+
+  const effectiveMode = !mayGuess && chatMode === 'guess' ? 'chat' : chatMode;
+  const inputPlaceholder = effectiveMode === 'broadcast'
+    ? '📢 Broadcast announcement to everyone...'
+    : effectiveMode === 'guess'
+      ? 'Type your guess here...'
+      : 'Type a chat message...';
+
   useEffect(() => { setMessages(room.messages); }, [room.id]);
   useEffect(() => {
     const onChat = (message: Message) => setMessages(current => {
@@ -46,32 +78,99 @@ function GameChat({ game }: { game: GameController }) {
     return () => { socket.off('chat_message', onChat); };
   }, []);
   useEffect(() => { listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }); }, [messages.length]);
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
     if (!text) return;
     setDraft('');
-    const result = mayGuess ? await game.sendGuess(text) : await game.sendChat(text);
+
+    let result;
+    if (effectiveMode === 'broadcast' || text.startsWith('/b ') || text.startsWith('/broadcast ')) {
+      const clean = text.replace(/^\/(b|broadcast)\s+/, '');
+      result = await game.broadcastChat(clean);
+    } else if (effectiveMode === 'chat' || text.startsWith('/c ') || text.startsWith('/chat ')) {
+      const clean = text.replace(/^\/(c|chat)\s+/, '');
+      result = await game.sendChat(clean);
+    } else {
+      result = await game.sendGuess(text);
+    }
+
     if (!result.ok) game.notify(result.message || 'Could not send message.');
   };
+
   return (
     <aside className="game-chat game-pane">
-      <div className="pane-heading chat-pane-heading"><div><h2>Chat & Guesses</h2></div><MessageCircle size={19}/></div>
+      <div className="pane-heading chat-pane-heading">
+        <div><h2>Chat & Guesses</h2></div>
+        <MessageCircle size={19}/>
+      </div>
       <div className="chat-messages" ref={listRef} role="log" aria-label="Live guesses and chat">
         {messages.length === 0 && <div className="chat-empty"><MessageCircle size={23}/><strong>No messages yet</strong><span>Guesses and messages will appear here.</span></div>}
         {messages.map(message => {
+          if (message.kind === 'broadcast') {
+            return (
+              <div className="chat-broadcast" key={message.id}>
+                <div className="broadcast-tag"><Megaphone size={13}/> ANNOUNCEMENT</div>
+                <div className="broadcast-body">
+                  <strong>{message.playerName || 'Host'}:</strong> {message.text}
+                </div>
+              </div>
+            );
+          }
           if (message.kind === 'success') return <div className="chat-success" key={message.id}><CheckCheck size={15}/><span>{message.text}</span></div>;
           if (message.kind === 'system') return <div className="chat-system" key={message.id}><Sparkles size={13}/> {message.text}</div>;
-          return <div className={`chat-line ${message.playerId === game.playerId ? 'own-line' : ''}`} key={message.id}>
-            <strong>{message.playerName || 'Player'}</strong><span>{message.text}</span>
-          </div>;
+          return (
+            <div className={`chat-line ${message.playerId === game.playerId ? 'own-line' : ''}`} key={message.id}>
+              <strong>{message.playerName || 'Player'}</strong><span>{message.text}</span>
+            </div>
+          );
         })}
       </div>
       <div className="chat-composer">
-        {room.phase === 'drawing' && <div className="chat-tip">{game.isDrawer ? <><Lock size={13}/> You are drawing. Secret word is hidden from others.</> : alreadyGuessed ? <><Check size={13}/> Correct guess! You can chat with other players.</> : <><Lightbulb size={13}/> Guess the word in the chat box to earn points.</>}</div>}
-        <form onSubmit={e => void submit(e)} className="chat-form"><input maxLength={160} aria-label="Write a guess or message" autoComplete="off"
-          placeholder={inputPlaceholder} value={draft} onChange={e => setDraft(e.target.value)} />
-          <button aria-label="Send" type="submit" disabled={!draft.trim()}><Send size={18}/></button></form>
+        <div className="chat-mode-tabs">
+          {mayGuess && (
+            <button
+              type="button"
+              className={`chat-tab-btn ${effectiveMode === 'guess' ? 'active' : ''}`}
+              onClick={() => setChatMode('guess')}
+            >
+              Guess
+            </button>
+          )}
+          <button
+            type="button"
+            className={`chat-tab-btn ${effectiveMode === 'chat' ? 'active' : ''}`}
+            onClick={() => setChatMode('chat')}
+          >
+            Chat
+          </button>
+          {game.isHost && (
+            <button
+              type="button"
+              className={`chat-tab-btn broadcast-tab ${effectiveMode === 'broadcast' ? 'active' : ''}`}
+              onClick={() => setChatMode(effectiveMode === 'broadcast' ? 'chat' : 'broadcast')}
+            >
+              <Megaphone size={12}/> Broadcast
+            </button>
+          )}
+        </div>
+        {room.phase === 'drawing' && (
+          <div className="chat-tip">
+            {game.isDrawer ? <><Lock size={13}/> You are drawing. Secret word is hidden from others.</> : alreadyGuessed ? <><Check size={13}/> Correct guess! You can chat with other players.</> : <><Lightbulb size={13}/> Guess the word or switch tabs to chat.</>}
+          </div>
+        )}
+        <form onSubmit={e => void submit(e)} className="chat-form">
+          <input
+            maxLength={160}
+            aria-label="Write a guess or message"
+            autoComplete="off"
+            placeholder={inputPlaceholder}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+          />
+          <button aria-label="Send" type="submit" disabled={!draft.trim()}><Send size={18}/></button>
+        </form>
       </div>
     </aside>
   );
@@ -125,7 +224,7 @@ export function Game({ game }: { game: GameController }) {
           <span>{room.phase === 'choosing' ? 'Selecting a word' : room.phase === 'round_end' ? 'Round complete' : 'Guess the drawing!'}</span></div>
           <div className="secret-word-display">{canDraw ? <><span>YOUR WORD</span><strong>{game.secretWord || '...'}</strong></> : <><span>THE WORD</span><strong className="word-blanks">{room.wordMask || '_ _ _ _ _'}</strong></>}</div>
         </div>
-        <div className="game-layout"><Scoreboard room={room} playerId={game.playerId}/>
+        <div className="game-layout"><Scoreboard room={room} game={game}/>
           <div className="game-board-column"><div className="board-title"><span>CANVAS</span><span><span className="board-dot"/> Live</span></div>
             <DrawingCanvas key={`${room.id}-${room.turn}`} room={room} canDraw={canDraw}/>
             <div className="progress-rail"><span style={{ width: `${roundProgress}%` }}/></div>

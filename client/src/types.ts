@@ -5,6 +5,9 @@ export type WordMode = 'normal' | 'hidden' | 'combination';
 export type Point = { x: number; y: number; pressure?: number };
 export type Tool = 'pen' | 'eraser';
 export type Stroke = { id: string; color: string; size: number; tool: Tool; points: Point[] };
+export type WordCategory = 'all' | 'animals' | 'objects' | 'food' | 'places';
+export type Language = 'en' | 'es' | 'fr' | 'de';
+
 export interface Settings {
   maxPlayers: number;
   rounds: number;
@@ -12,6 +15,8 @@ export interface Settings {
   wordCount: number;
   hints: number;
   wordMode: WordMode;
+  wordCategory?: WordCategory;
+  language?: Language;
 }
 export interface Player {
   id: string;
@@ -25,7 +30,7 @@ export interface Message {
   id: string;
   playerId?: string;
   playerName?: string;
-  kind: 'guess' | 'chat' | 'success' | 'system';
+  kind: 'guess' | 'chat' | 'success' | 'system' | 'broadcast';
   text: string;
   timestamp: number;
 }
@@ -57,6 +62,8 @@ export const DEFAULT_SETTINGS: Settings = {
   wordCount: 3,
   hints: 2,
   wordMode: 'normal',
+  wordCategory: 'all',
+  language: 'en',
 };
 export type SocketAck = { ok: boolean; message?: string; roomId?: string; playerId?: string };
 export interface PublicRoom { id: string; name: string; playerCount: number; maxPlayers: number }
